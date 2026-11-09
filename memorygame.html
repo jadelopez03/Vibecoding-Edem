@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Navideño / Grinch</title>
+    <style>
+        :root {
+            --bg-pink: #fff0f5;
+            --card-back: #ffb6c1;
+            --card-back-hover: #ff91a4;
+            --card-front: #ffffff;
+            --card-border: #ffe4e1;
+            --primary-pink: #ff69b4;
+            --dark-pink: #d81b60;
+            --text-color: #5c3a44;
+            --shadow: 0 8px 20px rgba(255, 105, 180, 0.2);
+            --panel-bg: #ffffff;
+            --modal-bg: #ffffff;
+            --timer-color: #d81b60;
+        }
+
+        body.grinch-mode {
+            --bg-pink: #0b1410;
+            --card-back: #1b4332;
+            --card-back-hover: #2d6a4f;
+            --card-front: #14221a;
+            --card-border: #2d6a4f;
+            --primary-pink: #52b788;
+            --dark-pink: #74c69d;
+            --text-color: #d8f3dc;
+            --shadow: 0 8px 20px rgba(82, 183, 136, 0.25);
+            --panel-bg: #14221a;
+            --modal-bg: #1b2e23;
+            --timer-color: #52b788;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        body {
+            background-color: var(--bg-pink);
+            color: var(--text-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .main-layout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .side-panel {
+            background: var(--panel-bg);
+            padding: 20px 15px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            width: 170px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .side-panel h3 {
+            font-size: 1rem;
+            color: var(--dark-pink);
+            margin-bottom: 5px;
+        }
+
+        .center-container {
+            flex: 1;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+        }
+
+        header {
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            color: var(--dark-pink);
+            font-size: 2rem;
+            margin-bottom: 8px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--panel-bg);
+            padding: 10px 18px;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-action {
+            background-color: var(--primary-pink);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .btn-action:hover {
+            background-color: var(--dark-pink);
+        }
+
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        /* Slider vertical o compacto */
+        .difficulty-slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .difficulty-slider-container input[type="range"] {
+            accent-color: var(--primary-pink);
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .difficulty-badge {
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            background: rgba(255, 105, 180, 0.1);
+            border-radius: 8px;
+        }
+
+        /* Temporizador estilo cute */
+        .timer-display {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--timer-color);
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 12px;
+            width: 100%;
+            letter-spacing: 1px;
+        }
+
+        .timer-icon {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+
+        .board {
+            display: grid;
+            gap: 10px;
+            perspective: 1000px;
+            background: var(--panel-bg);
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            perspective: 1000px;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.4s;
+            transform-style: preserve-3d;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+        }
+
+        .card.flipped .card-inner,
+        .card.matched .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-back {
+            background: linear-gradient(135deg, var(--card-back), var(--primary-pink));
+            color: white;
+            font-size: 1.8rem;
+        }
+
+        .card-back:hover {
+            background: linear-gradient(135deg, var(--card-back-hover), var(--dark-pink));
+        }
+
+        .card-front {
+            background-color: var(--card-front);
+            transform: rotateY(180deg);
+            padding: 6px;
+            border: 2px solid var(--card-border);
+        }
+
+        .card-front svg {
+            width: 80%;
+            height: 80%;
+        }
+
+        /* Modal de Victoria / Derrota */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 28, 20, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 10;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--modal-bg);
+            color: var(--text-color);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 350px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .modal h2 {
+            color: var(--dark-pink);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .modal p {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .modal button {
+            background-color: var(--primary-pink);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal button:hover {
+            background-color: var(--dark-pink);
+        }
+
+        /* Responsive para móviles */
+        @media (max-width: 768px) {
+            .main-layout {
+                flex-direction: column;
+                align-items: center;
+            }
+            .side-panel {
+                width: 100%;
+                max-width: 520px;
+                flex-direction: row;
+                justify-content: space-around;
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-layout">
+        <!-- Panel Izquierdo: Dificultad -->
+        <aside class="side-panel">
+            <h3>⚙️ Dificultad</h3>
+            <div class="difficulty-slider-container">
+                <input type="range" id="difficultySlider" min="6" max="10" step="2" value="8">
+                <span id="pairCountDisplay">8 parejas</span>
+            </div>
+            <div class="difficulty-badge" id="difficultyLabel">Normal (16)</div>
+        </aside>
+
+        <!-- Contenedor Central -->
+        <div class="center-container">
+            <header>
+                <h1 id="gameTitle">🎄 Memory Navideño ❄️</h1>
+                <div class="scoreboard">
+                    <span>Intentos: <strong id="attempts">0</strong></span>
+                    <div class="actions">
+                        <button class="btn-action" id="themeToggleBtn" title="Cambiar modo">💚 Grinch</button>
+                        <button class="btn-action" id="restartBtn">Reiniciar</button>
+                    </div>
+                </div>
+            </header>
+
+            <main>
+                <div class="board" id="gameBoard"></div>
+            </main>
+        </div>
+
+        <!-- Panel Derecho: Temporizador Cute -->
+        <aside class="side-panel">
+            <div class="timer-icon" id="timerIcon">⏳</div>
+            <h3>Tiempo</h3>
+            <div class="timer-display" id="timerDisplay">01:30</div>
+            <div class="difficulty-badge" id="timerStatus">¡A por todas!</div>
+        </aside>
+    </div>
+
+    <!-- Modal de Fin de Partida (Victoria / Tiempo agotado) -->
+    <div class="modal-overlay" id="gameModal">
+        <div class="modal">
+            <h2 id="modalTitle">¡Feliz Navidad! 🎁</h2>
+            <p id="modalText">Has completado todas las parejas en <strong id="finalAttempts">0</strong> intentos.</p>
+            <button id="modalRestartBtn">Jugar de nuevo</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Personajes Rosita (10 disponibles)
+        const pinkCharacters = [
+            {
+                name: 'Arbol',
+                svg: `<svg viewBox="0 0 100 100">
+                    <polygon points="50,12 53,20 62,20 55,25 58,33 50,28 42,33 45,25 38,20 47,20" fill="#ffd166"/>
+                    <polygon points="50,28 30,52 70,52" fill="#52b788"/>
+                    <polygon points="50,42 25,68 75,68" fill="#40916c"/>
+                    <polygon points="50,58 20,84 80,84" fill="#2d6a4f"/>
+                    <rect x="44" y="84" width="12" height="10" fill="#b08968" rx="2"/>
+                    <circle cx="45" cy="46" r="3" fill="#ffb703"/>
+                    <circle cx="55" cy="58" r="3" fill="#ff4d6d"/>
+                    <circle cx="40" cy="72" r="3" fill="#ffffff"/>
+                    <circle cx="62" cy="70" r="3" fill="#ffb703"/>
+                </svg>`
+            },
+            {
+                name: 'Santa',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 30 40 Q 50 10 75 35 Q 85 45 75 48 Q 50 25 30 40 Z" fill="#ff4d6d"/>
+                    <circle cx="78" cy="42" r="7" fill="white"/>
+                    <path d="M 28 42 L 72 42 L 75 52 L 25 52 Z" fill="white" rx="3"/>
+                    <circle cx="50" cy="62" r="18" fill="#fcd7b6"/>
+                    <path d="M 35 62 Q 50 85 65 62 Q 62 76 50 78 Q 38 76 35 62 Z" fill="white"/>
+                    <circle cx="43" cy="58" r="2" fill="#222"/>
+                    <circle cx="57" cy="58" r="2" fill="#222"/>
+                    <circle cx="50" cy="62" r="3.5" fill="#ffb703"/>
+                </svg>`
+            },
+            {
+                name: 'Reno',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 35 32 Q 25 20 20 25 M 25 24 L 32 28 M 65 32 Q 75 20 80 25 M 75 24 L 68 28" stroke="#b08968" stroke-width="4" stroke-linecap="round" fill="none"/>
+                    <ellipse cx="50" cy="55" rx="20" ry="18" fill="#dda15e"/>
+                    <ellipse cx="32" cy="45" rx="5" ry="8" fill="#bc6c25" transform="rotate(-20 32 45)"/>
+                    <ellipse cx="68" cy="45" rx="5" ry="8" fill="#bc6c25" transform="rotate(20 68 45)"/>
+                    <circle cx="42" cy="50" r="2.5" fill="#222"/>
+                    <circle cx="58" cy="50" r="2.5" fill="#222"/>
+                    <circle cx="50" cy="62" r="7" fill="#e05353"/>
+                </svg>`
+            },
+            {
+                name: 'Copo',
+                svg: `<svg viewBox="0 0 100 100">
+                    <g stroke="#4ea8de" stroke-width="5" stroke-linecap="round">
+                        <line x1="50" y1="15" x2="50" y2="85" />
+                        <line x1="15" y1="50" x2="85" y2="50" />
+                        <line x1="25" y1="25" x2="75" y2="75" />
+                        <line x1="25" y1="75" x2="75" y2="25" />
+                    </g>
+                    <circle cx="50" cy="50" r="8" fill="#caf0f8"/>
+                    <circle cx="50" cy="50" r="3" fill="#0077b6"/>
+                </svg>`
+            },
+            {
+                name: 'Regalo',
+                svg: `<svg viewBox="0 0 100 100">
+                    <rect x="25" y="42" width="50" height="46" fill="#ff4d6d" rx="6"/>
+                    <rect x="20" y="32" width="60" height="14" fill="#ff758c" rx="4"/>
+                    <rect x="44" y="32" width="12" height="56" fill="#ffd166"/>
+                    <rect x="20" y="58" width="60" height="12" fill="#ffd166"/>
+                    <path d="M 40 22 Q 30 10 42 20 Q 50 28 50 32 Q 50 28 58 20 Q 70 10 60 22 Q 50 32 40 22 Z" fill="#ffd166"/>
+                </svg>`
+            },
+            {
+                name: 'Jengibre',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 50 24 C 42 24 40 32 43 38 C 35 40 24 38 28 48 C 32 54 38 52 40 58 C 38 72 32 85 36 90 C 42 92 46 80 50 72 C 54 80 58 92 64 90 C 68 85 62 72 60 58 C 62 52 68 54 72 48 C 76 38 65 40 57 38 C 60 32 58 24 50 24 Z" fill="#b08968"/>
+                    <circle cx="44" cy="38" r="2" fill="white"/>
+                    <circle cx="56" cy="38" r="2" fill="white"/>
+                    <circle cx="50" cy="54" r="2.5" fill="#ff4d6d"/>
+                    <circle cx="50" cy="66" r="2.5" fill="#4ea8de"/>
+                    <path d="M 45 46 Q 50 50 55 46" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                </svg>`
+            },
+            {
+                name: 'Calcetin',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 38 28 L 62 28 L 62 40 L 70 40 Q 78 40 78 54 Q 78 70 64 80 L 40 80 Q 30 80 30 64 L 30 28 Z" fill="#ff4d6d"/>
+                    <rect x="34" y="24" width="32" height="14" fill="white" rx="4"/>
+                    <path d="M 46 58 Q 52 50 58 58 Q 52 66 46 58 Z" fill="#ffd166"/>
+                </svg>`
+            },
+            {
+                name: 'Nieve',
+                svg: `<svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="68" r="22" fill="white" stroke="#e0e0e0" stroke-width="2"/>
+                    <circle cx="50" cy="38" r="15" fill="white" stroke="#e0e0e0" stroke-width="2"/>
+                    <path d="M 38 48 Q 50 54 62 48 L 65 62 L 55 60 Z" fill="#ff4d6d"/>
+                    <circle cx="45" cy="35" r="2" fill="#222"/>
+                    <circle cx="55" cy="35" r="2" fill="#222"/>
+                    <polygon points="50,38 64,40 50,43" fill="#f77f00"/>
+                    <circle cx="50" cy="62" r="2" fill="#222"/>
+                    <circle cx="50" cy="72" r="2" fill="#222"/>
+                </svg>`
+            },
+            {
+                name: 'Muerdago',
+                svg: `<svg viewBox="0 0 100 100">
+                    <ellipse cx="38" cy="45" rx="14" ry="7" fill="#52b788" transform="rotate(-30 38 45)"/>
+                    <ellipse cx="62" cy="45" rx="14" ry="7" fill="#52b788" transform="rotate(30 62 45)"/>
+                    <circle cx="46" cy="58" r="5" fill="#d90429"/>
+                    <circle cx="54" cy="58" r="5" fill="#d90429"/>
+                    <circle cx="50" cy="50" r="4" fill="#ff4d6d"/>
+                    <path d="M 50 64 Q 38 55 42 70 Q 50 76 50 76 Q 50 76 58 70 Q 62 55 50 64 Z" fill="#ff69b4"/>
+                </svg>`
+            },
+            {
+                name: 'Galleta',
+                svg: `<svg viewBox="0 0 100 100">
+                    <polygon points="50,15 61,38 86,41 68,59 72,84 50,72 28,84 32,59 14,41 39,38" fill="#f4a261"/>
+                    <polygon points="50,22 58,40 78,42 63,57 67,77 50,67 33,77 37,57 22,42 42,40" fill="#e76f51"/>
+                    <polygon points="50,30 55,42 67,43 58,52 61,64 50,57 39,64 42,52 33,43 45,42" fill="white"/>
+                    <circle cx="50" cy="48" r="3" fill="#ff69b4"/>
+                </svg>`
+            }
+        ];
+
+        // 2. Personajes Grinch (10 disponibles)
+        const grinchCharacters = [
+            {
+                name: 'Grinch',
+                svg: `<svg viewBox="0 0 100 100">
+                    <polygon points="50,15 30,35 70,35" fill="#d90429"/>
+                    <circle cx="50" cy="22" r="6" fill="white"/>
+                    <path d="M 32 32 L 68 32 L 68 40 L 32 40 Z" fill="white"/>
+                    <ellipse cx="50" cy="58" rx="22" ry="18" fill="#52b788"/>
+                    <ellipse cx="40" cy="50" rx="6" ry="3.5" fill="#ffd166" transform="rotate(-15 40 50)"/>
+                    <ellipse cx="60" cy="50" rx="6" ry="3.5" fill="#ffd166" transform="rotate(15 60 50)"/>
+                    <circle cx="40" cy="50" r="1.5" fill="#d90429"/>
+                    <circle cx="60" cy="50" r="1.5" fill="#d90429"/>
+                    <path d="M 32 43 Q 40 48 48 43" stroke="#2d6a4f" stroke-width="3" fill="none"/>
+                    <path d="M 52 43 Q 60 48 68 43" stroke="#2d6a4f" stroke-width="3" fill="none"/>
+                    <path d="M 35 64 Q 50 78 65 64" stroke="#1b4332" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                </svg>`
+            },
+            {
+                name: 'Max',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 45 15 Q 35 5 30 10 M 35 8 L 42 12" stroke="#b08968" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <polygon points="30,8 26,4 34,4" fill="#ff4d6d"/>
+                    <ellipse cx="50" cy="56" rx="18" ry="16" fill="#c68b59"/>
+                    <path d="M 32 48 Q 20 65 25 75 Q 30 80 35 65 Z" fill="#a56a3b"/>
+                    <path d="M 68 48 Q 80 65 75 75 Q 70 80 65 65 Z" fill="#a56a3b"/>
+                    <circle cx="43" cy="50" r="3" fill="white"/>
+                    <circle cx="57" cy="50" r="3" fill="white"/>
+                    <circle cx="43" cy="50" r="1.2" fill="#222"/>
+                    <circle cx="57" cy="50" r="1.2" fill="#222"/>
+                    <ellipse cx="50" cy="62" rx="7" ry="5" fill="#5c4033"/>
+                    <circle cx="50" cy="60" r="2" fill="black"/>
+                </svg>`
+            },
+            {
+                name: 'Saco',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 35 30 Q 30 20 40 25 Q 50 15 60 25 Q 70 20 65 30 Q 78 45 72 82 Q 50 90 28 82 Q 22 45 35 30 Z" fill="#d4a373"/>
+                    <path d="M 35 32 L 65 32" stroke="#bc6c25" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="50" cy="60" r="12" fill="#2d6a4f"/>
+                    <text x="50" y="66" font-size="16" fill="#ffd166" text-anchor="middle" font-weight="bold">$</text>
+                </svg>`
+            },
+            {
+                name: 'Corazon',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 50 80 C 50 80 20 55 20 35 C 20 22 30 15 40 15 C 47 15 50 22 50 22 C 50 22 53 15 60 15 C 70 15 80 22 80 35 C 80 55 50 80 50 80 Z" fill="#ff4d6d"/>
+                    <path d="M 35 30 Q 40 25 45 32" stroke="white" stroke-width="3" stroke-linecap="round" fill="none"/>
+                    <circle cx="25" cy="20" r="2" fill="#ffd166"/>
+                    <circle cx="75" cy="25" r="2.5" fill="#ffd166"/>
+                </svg>`
+            },
+            {
+                name: 'Corona',
+                svg: `<svg viewBox="0 0 100 100">
+                    <circle cx="50" cy="55" r="28" fill="none" stroke="#2d6a4f" stroke-width="14"/>
+                    <circle cx="50" cy="55" r="20" fill="none" stroke="#1b4332" stroke-width="4" stroke-dasharray="8 6"/>
+                    <path d="M 50 24 Q 38 12 42 28 Q 50 35 50 35 Q 50 35 58 28 Q 62 12 50 24 Z" fill="#d90429"/>
+                    <circle cx="30" cy="60" r="4" fill="#ffd166"/>
+                    <circle cx="70" cy="55" r="4" fill="#d90429"/>
+                    <circle cx="50" cy="78" r="4" fill="#ffd166"/>
+                </svg>`
+            },
+            {
+                name: 'GorroGrinch',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 25 70 Q 50 20 85 45 Q 65 50 72 70 Q 50 65 25 70 Z" fill="#40916c"/>
+                    <circle cx="88" cy="42" r="8" fill="white"/>
+                    <path d="M 22 65 L 78 65 L 75 78 L 25 78 Z" fill="white" rx="3"/>
+                </svg>`
+            },
+            {
+                name: 'Robados',
+                svg: `<svg viewBox="0 0 100 100">
+                    <rect x="30" y="55" width="40" height="30" fill="#2d6a4f" rx="4"/>
+                    <rect x="47" y="55" width="6" height="30" fill="#ffd166"/>
+                    <rect x="35" y="30" width="30" height="28" fill="#d90429" rx="4"/>
+                    <rect x="47" y="30" width="6" height="28" fill="white"/>
+                    <path d="M 50 20 Q 40 10 45 25 Q 50 30 55 25 Q 60 10 50 20 Z" fill="#ffd166"/>
+                </svg>`
+            },
+            {
+                name: 'Zapato',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 35 30 L 55 30 Q 55 55 75 72 Q 85 80 70 82 L 35 82 Q 30 82 30 75 L 30 35 Z" fill="#1b4332"/>
+                    <path d="M 75 72 Q 92 78 82 86 Q 72 88 65 82 Z" fill="#1b4332"/>
+                    <rect x="28" y="26" width="32" height="12" fill="white" rx="3"/>
+                    <rect x="42" y="65" width="10" height="10" fill="#ffd166" rx="2"/>
+                </svg>`
+            },
+            {
+                name: 'Crumpit',
+                svg: `<svg viewBox="0 0 100 100">
+                    <polygon points="50,20 20,80 80,80" fill="#2d6a4f"/>
+                    <polygon points="50,20 35,45 65,45" fill="white"/>
+                    <path d="M 35 45 Q 42 52 50 45 Q 58 52 65 45 L 68 50 Q 50 58 32 50 Z" fill="white"/>
+                    <path d="M 55 32 L 65 35 M 57 35 L 63 35" stroke="#ffd166" stroke-width="2" stroke-linecap="round"/>
+                </svg>`
+            },
+            {
+                name: 'Trineo',
+                svg: `<svg viewBox="0 0 100 100">
+                    <path d="M 25 62 L 75 62 Q 80 62 82 55 L 75 48 L 35 48 L 25 62 Z" fill="#d90429"/>
+                    <path d="M 18 72 L 82 72 M 22 66 L 25 72 M 78 66 L 75 72" stroke="#b08968" stroke-width="3" stroke-linecap="round"/>
+                    <rect x="35" y="32" width="16" height="16" fill="#52b788"/>
+                    <rect x="52" y="28" width="18" height="20" fill="#ffd166"/>
+                </svg>`
+            }
+        ];
+
+        const gameBoard = document.getElementById('gameBoard');
+        const attemptsEl = document.getElementById('attempts');
+        const restartBtn = document.getElementById('restartBtn');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const difficultySlider = document.getElementById('difficultySlider');
+        const pairCountDisplay = document.getElementById('pairCountDisplay');
+        const difficultyLabel = document.getElementById('difficultyLabel');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerIcon = document.getElementById('timerIcon');
+        const timerStatus = document.getElementById('timerStatus');
+        const gameTitle = document.getElementById('gameTitle');
+        const modalTitle = document.getElementById('modalTitle');
+        const gameModal = document.getElementById('gameModal');
+        const modalText = document.getElementById('modalText');
+        const finalAttemptsEl = document.getElementById('finalAttempts');
+        const modalRestartBtn = document.getElementById('modalRestartBtn');
+
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let attempts = 0;
+        let isChecking = false;
+        let timerInterval = null;
+        let timeLeft = 0;
+
+        function getDifficultySettings(pairs) {
+            if (pairs == 6) {
+                return { label: 'Fácil (12)', cols: 4, seconds: 45 };
+            } else if (pairs == 8) {
+                return { label: 'Normal (16)', cols: 4, seconds: 75 };
+            } else {
+                return { label: 'Difícil (20)', cols: 5, seconds: 110 };
+            }
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function startTimer() {
+            stopTimer();
+            const pairs = parseInt(difficultySlider.value);
+            const settings = getDifficultySettings(pairs);
+            timeLeft = settings.seconds;
+            timerDisplay.textContent = formatTime(timeLeft);
+            timerStatus.textContent = '¡A por todas!';
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
+
+                if (timeLeft <= 15) {
+                    timerStatus.textContent = '⚠️ ¡Corre!';
+                }
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                    // Tiempo agotado
+                    const isGrinch = document.body.classList.contains('grinch-mode');
+                    modalTitle.textContent = isGrinch ? '¡El Grinch robó el tiempo! ⏰' : '¡Se acabó el tiempo! ⌛';
+                    modalText.innerHTML = `No pudiste terminar a tiempo. Inténtalo de nuevo.`;
+                    gameModal.classList.add('active');
+                }
+            }, 1000);
+        }
+
+        function initGame() {
+            stopTimer();
+            gameBoard.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            attempts = 0;
+            isChecking = false;
+            attemptsEl.textContent = attempts;
+            gameModal.classList.remove('active');
+
+            const pairs = parseInt(difficultySlider.value);
+            pairCountDisplay.textContent = `${pairs} parejas`;
+            const settings = getDifficultySettings(pairs);
+            difficultyLabel.textContent = settings.label;
+            gameBoard.style.gridTemplateColumns = `repeat(${settings.cols}, 1fr)`;
+
+            const isGrinch = document.body.classList.contains('grinch-mode');
+            const pool = isGrinch ? grinchCharacters : pinkCharacters;
+
+            const selectedChars = [...pool].sort(() => Math.random() - 0.5).slice(0, pairs);
+
+            const deck = [...selectedChars, ...selectedChars]
+                .sort(() => Math.random() - 0.5)
+                .map((char, index) => ({
+                    id: index,
+                    name: char.name,
+                    svg: char.svg,
+                    isFlipped: false,
+                    isMatched: false
+                }));
+
+            cards = deck;
+            renderBoard();
+            startTimer();
+        }
+
+        function renderBoard() {
+            gameBoard.innerHTML = '';
+            cards.forEach((card, index) => {
+                const cardEl = document.createElement('button');
+                cardEl.classList.add('card');
+                if (card.isFlipped) cardEl.classList.add('flipped');
+                if (card.isMatched) cardEl.classList.add('matched');
+                cardEl.dataset.index = index;
+
+                const isGrinch = document.body.classList.contains('grinch-mode');
+                const backEmoji = isGrinch ? '🟢' : '🎄';
+
+                cardEl.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-back">${backEmoji}</div>
+                        <div class="card-front">${card.svg}</div>
+                    </div>
+                `;
+
+                cardEl.addEventListener('click', () => handleCardClick(index));
+                gameBoard.appendChild(cardEl);
+            });
+        }
+
+        function handleCardClick(index) {
+            if (isChecking) return;
+            const clickedCard = cards[index];
+
+            if (clickedCard.isFlipped || clickedCard.isMatched) return;
+
+            clickedCard.isFlipped = true;
+            flippedCards.push({ index, name: clickedCard.name });
+            renderBoard();
+
+            if (flippedCards.length === 2) {
+                attempts++;
+                attemptsEl.textContent = attempts;
+                isChecking = true;
+
+                const [first, second] = flippedCards;
+
+                if (first.name === second.name) {
+                    cards[first.index].isMatched = true;
+                    cards[second.index].isMatched = true;
+                    matchedPairs++;
+                    flippedCards = [];
+                    isChecking = false;
+                    renderBoard();
+
+                    const targetPairs = parseInt(difficultySlider.value);
+                    if (matchedPairs === targetPairs) {
+                        stopTimer();
+                        setTimeout(() => {
+                            const isGrinch = document.body.classList.contains('grinch-mode');
+                            modalTitle.textContent = isGrinch ? '¡Robo Navideño con éxito! 🟢' : '¡Feliz Navidad! 🎁';
+                            modalText.innerHTML = `Has completado todas las parejas en <strong>${attempts}</strong> intentos y con <strong>${formatTime(timeLeft)}</strong> restante.`;
+                            gameModal.classList.add('active');
+                        }, 400);
+                    }
+                } else {
+                    setTimeout(() => {
+                        cards[first.index].isFlipped = false;
+                        cards[second.index].isFlipped = false;
+                        flippedCards = [];
+                        isChecking = false;
+                        renderBoard();
+                    }, 900);
+                }
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('grinch-mode');
+            const isGrinch = document.body.classList.contains('grinch-mode');
+            if (isGrinch) {
+                themeToggleBtn.textContent = '💖 Rosita';
+                gameTitle.textContent = '🟢 Memory del Grinch 🎄';
+                timerIcon.textContent = '⏰';
+            } else {
+                themeToggleBtn.textContent = '💚 Grinch';
+                gameTitle.textContent = '🎄 Memory Navideño ❄️';
+                timerIcon.textContent = '⏳';
+            }
+            initGame();
+        }
+
+        restartBtn.addEventListener('click', initGame);
+        modalRestartBtn.addEventListener('click', initGame);
+        themeToggleBtn.addEventListener('click', toggleTheme);
+        difficultySlider.addEventListener('input', initGame);
+
+        // Iniciar juego al cargar
+        initGame();
+    </script>
+</body>
+</html>
